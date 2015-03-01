@@ -26,21 +26,8 @@ public class MessageClient implements Runnable
 	
 	public MessageClient()
 	{
-		try(Socket s = new Socket(InetAddress.getLocalHost().getHostName(), 8189))
-		{
-			InputStream inStream = s.getInputStream();
-			OutputStream outStream = s.getOutputStream();
-			
-			Scanner in = new Scanner(inStream);
-			PrintWriter out = new PrintWriter(outStream, true);
-			Scanner scanner = new Scanner(System.in);
-			thread = new Thread(this);
-			thread.start();
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
-		}
+		thread = new Thread(this);
+		thread.start();
 		
 	}
 	
@@ -61,18 +48,33 @@ public class MessageClient implements Runnable
 			Scanner in = new Scanner(inStream);
 			PrintWriter out = new PrintWriter(outStream, true);
 			Scanner scanner = new Scanner(System.in);
+			out.flush();
 			
-
+			int pubNums[] = new int[2];
+			
+			pubNums[0] = in.nextInt();
+			pubNums[1] = in.nextInt();
+			
+			int secretInt = Diffie.Secret(pubNums[0]);
+			int secretNum = Diffie.GenMessage(pubNums, secretInt);
+			
+			out.println(secretNum);
+			
+			int serverSecret = in.nextInt();
+			
+			int secretKey = Diffie.GenKey(pubNums, serverSecret, secretInt);
+			
+			System.out.println("The secret key is " + secretKey);
+			out.println(secretKey);
+			
+			in.nextLine();
 			String response = in.nextLine();
+			System.out.println(response);
 			
 			String username;
 			
-			if(response.trim().equals("Hello! What is your username?"));
-			{
-				System.out.println("What is your username?");
-				username = scanner.nextLine();
-				out.println(username);
-			}
+			username = scanner.nextLine();
+			out.println(username);
 			
 			response = in.nextLine();
 			System.out.println(response);
@@ -87,15 +89,19 @@ public class MessageClient implements Runnable
 				response = in.nextLine();
 			}
 			
-
-			client = new MessageClientThread(this, s);
+			int users = in.nextInt();
+			System.out.println(users);
+			for(int x = 0; x < users + 3; x++)
+				System.out.println(in.nextLine());
 			
-			System.out.println("Fire\n");
+
+			
+			//System.out.println("Who would you like to message?\n");
 			String recipient = scanner.nextLine();
 			System.out.println(recipient);
 			out.println(recipient);
-			response = in.nextLine().trim();
-			while(!response.equals("The user does not exist."))
+			response = in.nextLine();
+			while(response.equals("User not found."))
 			{
 				System.out.println(response + ": The user does not exist.\n");
 				recipient = scanner.nextLine();
@@ -103,12 +109,16 @@ public class MessageClient implements Runnable
 				response = in.nextLine().trim();
 				
 			}
+			
 
+			client = new MessageClientThread(this, s);
 			
 			while(thread != null)
 			{
 				out.println(scanner.nextLine());
 			}
+			
+			System.out.println("done");
 			
 			
 		} catch (UnknownHostException e) 
